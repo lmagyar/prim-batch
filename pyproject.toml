@@ -18,6 +18,7 @@ packages = [{include = "prim_batch"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+filelock = "3.16.0"
 
 [tool.poetry.scripts]
 prim-batch = "prim_batch.__main__:run"

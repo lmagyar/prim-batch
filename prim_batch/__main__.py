@@ -9,11 +9,13 @@ import subprocess
 import sys
 import tomllib
 from contextlib import suppress
+from filelock import FileLock, Timeout as LockTimeout
 from pathlib import Path
 from typing import Dict
 
 ########
 
+LOCK_FILE_SUFFIX = '.lock'
 CTRL_ARGS = 'ctrl-args'
 SYNC_ARGS = 'sync-args'
 SYNC_ARGS_VPN = 'sync-args-vpn'
@@ -288,38 +290,38 @@ def main():
         else:
             try:
                 # keep a lock on the config file while running to prevent parallel runs
-                with open(args.config_file, "r+b") as config_file:
-                    config = tomllib.load(config_file)
-                    general = General(args, config)
+                with FileLock(args.config_file + LOCK_FILE_SUFFIX, blocking=False):
+                    with open(args.config_file, "rb") as config_file:
+                        config = tomllib.load(config_file)
+                        general = General(args, config)
 
-                    def _sync_server(server_name):
-                        server = Server(args, general, server_name)
-                        if args.folder is None or args.folder in server.folder_configs:
-                            if server.start():
-                                try:
-                                    if args.folder is None:
-                                        for folder_name in server.folder_configs:
-                                            if not Folder(args, server, folder_name).sync():
-                                                break
-                                    else:
-                                        Folder(args, server, args.folder).sync()
-                                finally:
-                                    server.stop()
-                            return True
-                        return False
+                        def _sync_server(server_name):
+                            server = Server(args, general, server_name)
+                            if args.folder is None or args.folder in server.folder_configs:
+                                if server.start():
+                                    try:
+                                        if args.folder is None:
+                                            for folder_name in server.folder_configs:
+                                                if not Folder(args, server, folder_name).sync():
+                                                    break
+                                        else:
+                                            Folder(args, server, args.folder).sync()
+                                    finally:
+                                        server.stop()
+                                return True
+                            return False
 
-                    if args.server is None:
-                        if not any(_sync_server(server_name) for server_name in general.server_configs):
-                            logger.error(f"Folder %s is not specified under any server", args.folder)
-                    elif args.server in general.server_configs:
-                        if not _sync_server(args.server):
-                            logger.error(f"Folder %s is not specified under server %s", args.folder, args.server)
-                    else:
-                        logger.error(f"Server %s is not specified in config", args.server)
+                        if args.server is None:
+                            if not any(_sync_server(server_name) for server_name in general.server_configs):
+                                logger.error(f"Folder %s is not specified under any server", args.folder)
+                        elif args.server in general.server_configs:
+                            if not _sync_server(args.server):
+                                logger.error(f"Folder %s is not specified under server %s", args.folder, args.server)
+                        else:
+                            logger.error(f"Server %s is not specified in config", args.server)
 
-            except IOError as e:
-                if e.errno == errno.EACCES:
-                    e.add_note(f"Can't acquire lock on config-file, probably already running")
+            except LockTimeout as e:
+                logger.error("Can't acquire lock on %s, probably already running", e.lock_file)
 
     except Exception as e:
         if not args or args.debug or args.test:
