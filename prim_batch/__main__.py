@@ -244,7 +244,7 @@ class Folder():
 ########
 
 class WideHelpFormatter(argparse.RawTextHelpFormatter):
-    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 24, width: int | None = None) -> None:
+    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 33, width: int | None = None) -> None:
         super().__init__(prog, indent_increment, max_help_position, width)
 
 def main():
@@ -259,8 +259,8 @@ def main():
         parser.add_argument('config_file', metavar='config-file', help="TOML config file")
         parser.add_argument('--scheduled', help="tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file", default=False, action='store_true')
         parser.add_argument('--no-pause', help="syncs without pause", default=False, action='store_true')
-        parser.add_argument('--server', metavar="SERVER", help="syncs only SERVER (all, or only the specified --folder FOLDER)")
-        parser.add_argument('--folder', metavar="FOLDER", help="syncs only FOLDER (with all, or only with the specified --server SERVER)")
+        parser.add_argument('--servers', nargs='+', metavar="SERVER", help="syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)")
+        parser.add_argument('--folders', nargs='+', metavar="FOLDER", help="syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)")
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
         logging_group = parser.add_argument_group('logging',
             description="Note: prim-sync and prim-ctrl commands will receive these options also")
@@ -299,28 +299,31 @@ def main():
 
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
-                        if args.folder is None or args.folder in server.folder_configs:
+                        if args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
                             if server.start():
                                 try:
-                                    if args.folder is None:
+                                    if args.folders is None:
                                         for folder_name in server.folder_configs:
                                             if not Folder(args, server, folder_name).sync():
                                                 break
                                     else:
-                                        Folder(args, server, args.folder).sync()
+                                        for folder_name in args.folders:
+                                            if folder_name in server.folder_configs:
+                                                if not Folder(args, server, folder_name).sync():
+                                                    break;
                                 finally:
                                     server.stop()
                             return True
                         return False
 
-                    if args.server is None:
+                    if args.servers is None:
                         if not any(_sync_server(server_name) for server_name in general.server_configs):
-                            logger.error(f"Folder %s is not specified under any server", args.folder)
-                    elif args.server in general.server_configs:
-                        if not _sync_server(args.server):
-                            logger.error(f"Folder %s is not specified under server %s", args.folder, args.server)
+                            logger.error("None of the specified folders (%s) are on any configured server", LazyStr(', '.join, args.folders))
+                    elif any(server_name in general.server_configs for server_name in args.servers):
+                        if not any(_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs):
+                            logger.error("None of the specified folders (%s) are on any specified servers (%s)", LazyStr(', '.join, args.folders), LazyStr(', '.join, args.servers))
                     else:
-                        logger.error(f"Server %s is not specified in config", args.server)
+                        logger.error("None of the specified servers (%s) are in the config", LazyStr(', '.join, args.servers))
 
             except LockTimeout as e:
                 logger.error("Can't acquire lock on %s, probably already running", e.lock_file)

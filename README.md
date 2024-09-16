@@ -108,28 +108,28 @@ prim-batch config.toml -t --scheduled
 ### Options
 
 ```
-usage: prim-batch [-h] [--scheduled] [--no-pause] [--server SERVER] [--folder FOLDER] [--test] [-t] [-s] [--debug] [-d] config-file
+usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--test] [-t] [-s] [--debug] [-d] config-file
 
 Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands, for more details see https://github.com/lmagyar/prim-batch
 
 positional arguments:
-  config-file      TOML config file
+  config-file                    TOML config file
 
 options:
-  -h, --help       show this help message and exit
-  --scheduled      tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
-  --no-pause       syncs without pause
-  --server SERVER  syncs only SERVER (all, or only the specified --folder FOLDER)
-  --folder FOLDER  syncs only FOLDER (with all, or only with the specified --server SERVER)
-  --test           do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
+  -h, --help                     show this help message and exit
+  --scheduled                    tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
+  --no-pause                     syncs without pause
+  --servers SERVER [SERVER ...]  syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)
+  --folders FOLDER [FOLDER ...]  syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)
+  --test                         do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
 
 logging:
   Note: prim-sync and prim-ctrl commands will receive these options also
 
-  -t, --timestamp  prefix each message with a timestamp
-  -s, --silent     only errors printed
-  --debug          use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
+  -t, --timestamp                prefix each message with a timestamp
+  -s, --silent                   only errors printed
+  --debug                        use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
 
 prim-sync:
-  -d, --dry        no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
+  -d, --dry                      no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
 ```
