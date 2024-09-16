@@ -1,6 +1,5 @@
 
 import argparse
-import errno
 import logging
 import os
 import platform
