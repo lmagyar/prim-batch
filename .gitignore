@@ -2,4 +2,4 @@
 dist/*
 __pycache__
 
-tests/test.toml
+tests/test.toml*
