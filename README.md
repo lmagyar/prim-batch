@@ -1,7 +1,4 @@
 
-> [!CAUTION]
-> ***This branch is in alpha***
-
 # Primitive Batch
 
 Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands.
