@@ -15,6 +15,7 @@ from typing import Dict
 ########
 
 LOCK_FILE_SUFFIX = '.lock'
+
 CTRL_ARGS = 'ctrl-args'
 SYNC_ARGS = 'sync-args'
 SYNC_ARGS_VPN = 'sync-args-vpn'
