@@ -136,7 +136,7 @@ def execute(command, args, parsed_args):
     cmd.insert(0, command)
     logger.debug("executing: %s", LazyStr(shlex.join, cmd))
     if parsed_args.test:
-        return (0, '')
+        return (0, '<<<TEST RUN>>>')
     # text=True doesn't work with the async version, will raise ValueError("text must be False"), who knows why
     # creationflags=subprocess.CREATE_NO_WINDOW causes to NOT write stderr at all
     result = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=sys.stderr, text=True)
@@ -247,6 +247,8 @@ class WideHelpFormatter(argparse.RawTextHelpFormatter):
 
 def main():
     args = None
+    print_stopped = False
+    pause = False
     try:
         parser = argparse.ArgumentParser(
             description="Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands, for more details see https://github.com/lmagyar/prim-batch",
@@ -272,9 +274,12 @@ def main():
             logger.setLevel(logging.DEBUG)
         logger.prepare(args.timestamp or args.debug or args.test, args.silent)
 
+        pause = not args.scheduled and not args.no_pause and not args.test
+
         argv0 = LazyStr(os.path.basename, sys.argv[0])
         argvx = LazyStr(shlex.join, sys.argv[1:])
         if args.scheduled:
+            print_stopped = True
             logger.info("= STARTED = %s %s", argv0, argvx)
 
         # this testing is useful when as a scheduled task is executed after an awake and networking is not ready yet
@@ -316,13 +321,6 @@ def main():
                 if e.errno == errno.EACCES:
                     e.add_note(f"Can't acquire lock on config-file, probably already running")
 
-        if args.scheduled:
-            logger.info("= STOPPED = %s %s", argv0, argvx)
-
-        if not args.scheduled and not args.no_pause and not args.test:
-            with suppress(EOFError):
-                input("Press Enter to continue...")
-
     except Exception as e:
         if not args or args.debug or args.test:
             logger.exception(e)
@@ -331,6 +329,13 @@ def main():
                 logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
             else:
                 logger.error(LazyStr(repr, e))
+
+    if print_stopped:
+        logger.info("= STOPPED = %s %s", argv0, argvx)
+
+    if pause:
+        with suppress(EOFError):
+            input("Press Enter to continue...")
 
     return logger.exitcode
 
