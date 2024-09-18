@@ -195,6 +195,8 @@ class Server(HasPredefinedConfigs):
 
     def start(self):
         start_ctrl_args = self.ctrl_cmd_args.copy()
+        if self.args.ctrl_args:
+            start_ctrl_args.extend(shlex_split(self.args.ctrl_args))
         start_ctrl_args.extend(['-i', 'start', '-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         if exitcode == 0:
@@ -207,6 +209,8 @@ class Server(HasPredefinedConfigs):
 
     def stop(self):
         stop_ctrl_args = self.ctrl_cmd_args.copy()
+        if self.args.ctrl_args:
+            stop_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
         stop_ctrl_args.extend(['-i', 'stop', '-r', self.previous_state])
         exitcode, _stdout = execute('prim-ctrl', stop_ctrl_args, self.args)
         return exitcode == 0
@@ -235,6 +239,8 @@ class Folder():
             append_sync_options(self._sync_cmd_args, self.args)
             if self.args.scheduled:
                 append_if_not_in(self._sync_cmd_args, '-ss')
+            if self.args.sync_args:
+                self._sync_cmd_args.extend(shlex_split(self.args.sync_args))
         return self._sync_cmd_args
 
     def sync(self):
@@ -269,8 +275,11 @@ def main():
         logging_group.add_argument('-t', '--timestamp', help="prefix each message with a timestamp", default=False, action='store_true')
         logging_group.add_argument('-s', '--silent', help="only errors printed", default=False, action='store_true')
         logging_group.add_argument('--debug', help="use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options", default=False, action='store_true')
+        ctrl_group = parser.add_argument_group('prim-ctrl')
+        ctrl_group.add_argument('--ctrl-args', metavar="ARGS", help="any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'")
         sync_group = parser.add_argument_group('prim-sync')
         sync_group.add_argument('-d', '--dry', help="no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up", default=False, action='store_true')
+        sync_group.add_argument('--sync-args', metavar="ARGS", help="any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'")
 
         args = parser.parse_args()
 
