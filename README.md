@@ -92,9 +92,9 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   ext = { sync-args = "'~/Mobile' '/fs/storage/XXXX-XXXX'  '/saf'" }
 
   [servers.your-phone.folders]
-  Camera        = { configs = [ 'ext' ],        sync-args = "'Camera' 'DCIM/Camera'" }
-  Music         = { configs = [ 'ext', 'out' ], sync-args = "'Music' '*'" }
-  Screenshots   = { configs = [ 'int' ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
+  Camera        = { configs = [ "ext" ],        sync-args = "'Camera' 'DCIM/Camera'" }
+  Music         = { configs = [ "ext", "out" ], sync-args = "'Music' '*'" }
+  Screenshots   = { configs = [ "int" ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
   ```
 
   </details>
@@ -118,9 +118,9 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   ext = { sync-args = '"D:\Mobile" "/fs/storage/XXXX-XXXX"  "/saf"' }
 
   [servers.your-phone.folders]
-  Camera        = { configs = [ "ext" ],        sync-args = '"Camera" "DCIM/Camera"' }
-  Music         = { configs = [ "ext", "out" ], sync-args = '"Music" "*"' }
-  Screenshots   = { configs = [ "int" ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
+  Camera        = { configs = [ 'ext' ],        sync-args = '"Camera" "DCIM/Camera"' }
+  Music         = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*"' }
+  Screenshots   = { configs = [ 'int' ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
   ```
   </details>
 
