@@ -8,7 +8,7 @@ Multiplatform Python script for batch execution of prim-ctrl and prim-sync comma
 
 With the help of this script you can sync multiple phones (Primitive FTPd SFTP servers) and multiple folders on them in a preconfigured way.
 
-It basically concatenates command lines for prim-ctrl and prim-sync based on the config. So depending on your system, windows or unix, use the appropriate single or double quotation marks and proper escaping in the config file.
+It basically concatenates command lines for prim-ctrl and prim-sync based on the config. So depending on your system, Windows or Unix, use the appropriate single or double quotation marks and proper escaping in the config file.
 
 See my other project, https://github.com/lmagyar/prim-sync, for bidirectional and unidirectional sync over SFTP (multiplatform Python script optimized for the Primitive FTPd SFTP server).
 
@@ -130,7 +130,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 
 ```
 prim-batch config.toml -t
-prim-batch config.toml -t --server your-phone --folder Camera
+prim-batch config.toml -t --servers your-phone --folders Camera
 prim-batch config.toml -t --scheduled
 ```
 
