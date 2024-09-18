@@ -72,28 +72,57 @@ Optionally, if you want to edit or even contribute to the source, you also need 
 
 It uses TOML file for configuration. Instead of specification, here is an example config:
 
-```
-ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
-sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
+  <details><summary>Unix</summary>
 
-[configs]
-in  = { sync-args = '-ui -m --overwrite-destination' }
-out = { sync-args = '-uo -m --overwrite-destination' }
+  ```
+  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443"
+  sync-args = "-rs '/fs/storage/emulated/0' --ignore-locks 60 -sh"
 
-[servers.your-phone]
-ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222'
-sync-args = 'your-phone-pftpd id_ed25519_sftp'
-sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
+  [configs]
+  in  = { sync-args = "-ui -m --overwrite-destination" }
+  out = { sync-args = "-uo -m --overwrite-destination" }
 
-[servers.your-phone.configs]
-int = { sync-args = '"D:\Mobile" "/fs/storage/emulated/0" "*"' }
-ext = { sync-args = '"D:\Mobile" "/fs/storage/XXXX-XXXX"  "/saf"' }
+  [servers.your-phone]
+  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222"
+  sync-args = "your-phone-pftpd id_ed25519_sftp"
+  sync-args-vpn = "-a your-phone.tailxxxx.ts.net 2222"
 
-[servers.your-phone.folders]
-Camera        = { configs = [ "ext" ],        sync-args = '"Camera" "DCIM/Camera"' }
-Music         = { configs = [ "ext", "out" ], sync-args = '"Music" "*"' }
-Screenshots   = { configs = [ "int" ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
-```
+  [servers.your-phone.configs]
+  int = { sync-args = "'~/Mobile' '/fs/storage/emulated/0' '*'" }
+  ext = { sync-args = "'~/Mobile' '/fs/storage/XXXX-XXXX'  '/saf'" }
+
+  [servers.your-phone.folders]
+  Camera        = { configs = [ 'ext' ],        sync-args = "'Camera' 'DCIM/Camera'" }
+  Music         = { configs = [ 'ext', 'out' ], sync-args = "'Music' '*'" }
+  Screenshots   = { configs = [ 'int' ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
+  ```
+
+  </details>
+  <details><summary>Windows</summary>
+
+  ```
+  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
+  sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
+
+  [configs]
+  in  = { sync-args = '-ui -m --overwrite-destination' }
+  out = { sync-args = '-uo -m --overwrite-destination' }
+
+  [servers.your-phone]
+  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222'
+  sync-args = 'your-phone-pftpd id_ed25519_sftp'
+  sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
+
+  [servers.your-phone.configs]
+  int = { sync-args = '"D:\Mobile" "/fs/storage/emulated/0" "*"' }
+  ext = { sync-args = '"D:\Mobile" "/fs/storage/XXXX-XXXX"  "/saf"' }
+
+  [servers.your-phone.folders]
+  Camera        = { configs = [ "ext" ],        sync-args = '"Camera" "DCIM/Camera"' }
+  Music         = { configs = [ "ext", "out" ], sync-args = '"Music" "*"' }
+  Screenshots   = { configs = [ "int" ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
+  ```
+  </details>
 
 ## Usage
 
