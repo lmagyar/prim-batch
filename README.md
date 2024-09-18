@@ -5,7 +5,7 @@ Multiplatform Python script for batch execution of prim-ctrl and prim-sync comma
 
 With the help of this script you can sync multiple phones (Primitive FTPd SFTP servers) and multiple folders on them in a preconfigured way.
 
-It basically concatenates command lines for prim-ctrl and prim-sync based on the config. So depending on your system, windows or unix, use the appropriate single or double quotation marks and proper escaping in the config file.
+It basically concatenates command lines for prim-ctrl and prim-sync based on the config. So depending on your system, Windows or Unix, use the appropriate single or double quotation marks and proper escaping in the config file.
 
 See my other project, https://github.com/lmagyar/prim-sync, for bidirectional and unidirectional sync over SFTP (multiplatform Python script optimized for the Primitive FTPd SFTP server).
 
@@ -42,8 +42,8 @@ You need to install:
   <details><summary>Unix</summary>
 
   ```
-  python3 -m pip install --user pipx
-  python3 -m pipx ensurepath
+  sudo apt install pipx
+  pipx ensurepath
   ```
   </details>
   <details><summary>Windows</summary>
@@ -69,28 +69,57 @@ Optionally, if you want to edit or even contribute to the source, you also need 
 
 It uses TOML file for configuration. Instead of specification, here is an example config:
 
-```
-ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
-sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
+  <details><summary>Unix</summary>
 
-[configs]
-in  = { sync-args = '-ui -m --overwrite-destination' }
-out = { sync-args = '-uo -m --overwrite-destination' }
+  ```
+  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443"
+  sync-args = "-rs '/fs/storage/emulated/0' --ignore-locks 60 -sh"
 
-[servers.your-phone]
-ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222'
-sync-args = 'your-phone-pftpd id_ed25519_sftp'
-sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
+  [configs]
+  in  = { sync-args = "-ui -m --overwrite-destination" }
+  out = { sync-args = "-uo -m --overwrite-destination" }
 
-[servers.your-phone.configs]
-int = { sync-args = '"D:\Mobile" "/fs/storage/emulated/0" "*"' }
-ext = { sync-args = '"D:\Mobile" "/fs/storage/XXXX-XXXX"  "/saf"' }
+  [servers.your-phone]
+  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222"
+  sync-args = "your-phone-pftpd id_ed25519_sftp"
+  sync-args-vpn = "-a your-phone.tailxxxx.ts.net 2222"
 
-[servers.your-phone.folders]
-Camera        = { configs = [ "ext" ],        sync-args = '"Camera" "DCIM/Camera"' }
-Music         = { configs = [ "ext", "out" ], sync-args = '"Music" "*"' }
-Screenshots   = { configs = [ "int" ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
-```
+  [servers.your-phone.configs]
+  int = { sync-args = "'~/Mobile' '/fs/storage/emulated/0' '*'" }
+  ext = { sync-args = "'~/Mobile' '/fs/storage/XXXX-XXXX'  '/saf'" }
+
+  [servers.your-phone.folders]
+  Camera        = { configs = [ "ext" ],        sync-args = "'Camera' 'DCIM/Camera'" }
+  Music         = { configs = [ "ext", "out" ], sync-args = "'Music' '*'" }
+  Screenshots   = { configs = [ "int" ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
+  ```
+
+  </details>
+  <details><summary>Windows</summary>
+
+  ```
+  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
+  sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
+
+  [configs]
+  in  = { sync-args = '-ui -m --overwrite-destination' }
+  out = { sync-args = '-uo -m --overwrite-destination' }
+
+  [servers.your-phone]
+  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222'
+  sync-args = 'your-phone-pftpd id_ed25519_sftp'
+  sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
+
+  [servers.your-phone.configs]
+  int = { sync-args = '"D:\Mobile" "/fs/storage/emulated/0" "*"' }
+  ext = { sync-args = '"D:\Mobile" "/fs/storage/XXXX-XXXX"  "/saf"' }
+
+  [servers.your-phone.folders]
+  Camera        = { configs = [ 'ext' ],        sync-args = '"Camera" "DCIM/Camera"' }
+  Music         = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*"' }
+  Screenshots   = { configs = [ 'int' ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
+  ```
+  </details>
 
 ## Usage
 
@@ -98,35 +127,42 @@ Screenshots   = { configs = [ "int" ],        sync-args = '"Screenshots" "DCIM/S
 
 ```
 prim-batch config.toml -t
-prim-batch config.toml -t --server your-phone --folder Camera
+prim-batch config.toml -t --servers your-phone --folders Camera
 prim-batch config.toml -t --scheduled
 ```
 
 ### Options
 
 ```
-usage: prim-batch [-h] [--scheduled] [--no-pause] [--server SERVER] [--folder FOLDER] [--test] [-t] [-s] [--debug] [-d] config-file
+usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--skip-ctrl] [--use-vpn] [--test] [-t] [-s] [--debug] [--ctrl-args ARGS] [-d] [--sync-args ARGS]
+                  config-file
 
 Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands, for more details see https://github.com/lmagyar/prim-batch
 
 positional arguments:
-  config-file      TOML config file
+  config-file                    TOML config file
 
 options:
-  -h, --help       show this help message and exit
-  --scheduled      tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
-  --no-pause       syncs without pause
-  --server SERVER  syncs only SERVER (all, or only the specified --folder FOLDER)
-  --folder FOLDER  syncs only FOLDER (with all, or only with the specified --server SERVER)
-  --test           do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
+  -h, --help                     show this help message and exit
+  --scheduled                    tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
+  --no-pause                     syncs without pause
+  --servers SERVER [SERVER ...]  syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)
+  --folders FOLDER [FOLDER ...]  syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)
+  --skip-ctrl                    use only prim-sync, you have to start/stop the server manually
+  --use-vpn                      use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)
+  --test                         do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
 
 logging:
   Note: prim-sync and prim-ctrl commands will receive these options also
 
-  -t, --timestamp  prefix each message with a timestamp
-  -s, --silent     only errors printed
-  --debug          use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
+  -t, --timestamp                prefix each message with a timestamp
+  -s, --silent                   only errors printed
+  --debug                        use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
+
+prim-ctrl:
+  --ctrl-args ARGS               any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'
 
 prim-sync:
-  -d, --dry        no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
+  -d, --dry                      no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
+  --sync-args ARGS               any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'
 ```

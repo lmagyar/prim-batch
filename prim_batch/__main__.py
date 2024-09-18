@@ -1,6 +1,5 @@
 
 import argparse
-import errno
 import logging
 import os
 import platform
@@ -9,10 +8,13 @@ import subprocess
 import sys
 import tomllib
 from contextlib import suppress
+from filelock import FileLock, Timeout as LockTimeout
 from pathlib import Path
 from typing import Dict
 
 ########
+
+LOCK_FILE_SUFFIX = '.lock'
 
 CTRL_ARGS = 'ctrl-args'
 SYNC_ARGS = 'sync-args'
@@ -136,7 +138,7 @@ def execute(command, args, parsed_args):
     cmd.insert(0, command)
     logger.debug("executing: %s", LazyStr(shlex.join, cmd))
     if parsed_args.test:
-        return (0, '')
+        return (0, '<<<TEST RUN>>>')
     # text=True doesn't work with the async version, will raise ValueError("text must be False"), who knows why
     # creationflags=subprocess.CREATE_NO_WINDOW causes to NOT write stderr at all
     result = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=sys.stderr, text=True)
@@ -193,6 +195,8 @@ class Server(HasPredefinedConfigs):
 
     def start(self):
         start_ctrl_args = self.ctrl_cmd_args.copy()
+        if self.args.ctrl_args:
+            start_ctrl_args.extend(shlex_split(self.args.ctrl_args))
         start_ctrl_args.extend(['-i', 'start', '-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         if exitcode == 0:
@@ -205,6 +209,8 @@ class Server(HasPredefinedConfigs):
 
     def stop(self):
         stop_ctrl_args = self.ctrl_cmd_args.copy()
+        if self.args.ctrl_args:
+            stop_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
         stop_ctrl_args.extend(['-i', 'stop', '-r', self.previous_state])
         exitcode, _stdout = execute('prim-ctrl', stop_ctrl_args, self.args)
         return exitcode == 0
@@ -223,7 +229,7 @@ class Folder():
         if self._sync_cmd_args is None:
             self._sync_cmd_args = list()
             self._sync_cmd_args.extend(self.server.sync_args)
-            if self.server.connected_over_vpn:
+            if self.args.use_vpn or not self.args.skip_ctrl and self.server.connected_over_vpn:
                 self._sync_cmd_args.extend(self.server.sync_args_vpn)
             self._sync_cmd_args.extend(self.server.general.sync_args)
             for config_name in self.configs:
@@ -233,6 +239,8 @@ class Folder():
             append_sync_options(self._sync_cmd_args, self.args)
             if self.args.scheduled:
                 append_if_not_in(self._sync_cmd_args, '-ss')
+            if self.args.sync_args:
+                self._sync_cmd_args.extend(shlex_split(self.args.sync_args))
         return self._sync_cmd_args
 
     def sync(self):
@@ -242,11 +250,13 @@ class Folder():
 ########
 
 class WideHelpFormatter(argparse.RawTextHelpFormatter):
-    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 24, width: int | None = None) -> None:
+    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 33, width: int | None = None) -> None:
         super().__init__(prog, indent_increment, max_help_position, width)
 
 def main():
     args = None
+    print_stopped = False
+    pause = False
     try:
         parser = argparse.ArgumentParser(
             description="Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands, for more details see https://github.com/lmagyar/prim-batch",
@@ -255,16 +265,21 @@ def main():
         parser.add_argument('config_file', metavar='config-file', help="TOML config file")
         parser.add_argument('--scheduled', help="tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file", default=False, action='store_true')
         parser.add_argument('--no-pause', help="syncs without pause", default=False, action='store_true')
-        parser.add_argument('--server', metavar="SERVER", help="syncs only SERVER (all, or only the specified --folder FOLDER)")
-        parser.add_argument('--folder', metavar="FOLDER", help="syncs only FOLDER (with all, or only with the specified --server SERVER)")
+        parser.add_argument('--servers', nargs='+', metavar="SERVER", help="syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)")
+        parser.add_argument('--folders', nargs='+', metavar="FOLDER", help="syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)")
+        parser.add_argument('--skip-ctrl', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
+        parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)", default=False, action='store_true')
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
         logging_group = parser.add_argument_group('logging',
             description="Note: prim-sync and prim-ctrl commands will receive these options also")
         logging_group.add_argument('-t', '--timestamp', help="prefix each message with a timestamp", default=False, action='store_true')
         logging_group.add_argument('-s', '--silent', help="only errors printed", default=False, action='store_true')
         logging_group.add_argument('--debug', help="use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options", default=False, action='store_true')
+        ctrl_group = parser.add_argument_group('prim-ctrl')
+        ctrl_group.add_argument('--ctrl-args', metavar="ARGS", help="any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'")
         sync_group = parser.add_argument_group('prim-sync')
         sync_group.add_argument('-d', '--dry', help="no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up", default=False, action='store_true')
+        sync_group.add_argument('--sync-args', metavar="ARGS", help="any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'")
 
         args = parser.parse_args()
 
@@ -272,9 +287,15 @@ def main():
             logger.setLevel(logging.DEBUG)
         logger.prepare(args.timestamp or args.debug or args.test, args.silent)
 
+        if args.use_vpn and not args.skip_ctrl:
+            raise ValueError("--use-vpn option can be used only when --skip-ctrl is used")
+
+        pause = not args.scheduled and not args.no_pause and not args.test
+
         argv0 = LazyStr(os.path.basename, sys.argv[0])
         argvx = LazyStr(shlex.join, sys.argv[1:])
         if args.scheduled:
+            print_stopped = True
             logger.info("= STARTED = %s %s", argv0, argvx)
 
         # this testing is useful when as a scheduled task is executed after an awake and networking is not ready yet
@@ -283,45 +304,44 @@ def main():
         else:
             try:
                 # keep a lock on the config file while running to prevent parallel runs
-                with open(args.config_file, "r+b") as config_file:
+                with (
+                    FileLock(args.config_file + LOCK_FILE_SUFFIX, blocking=False),
+                    open(args.config_file, "rb") as config_file
+                ):
                     config = tomllib.load(config_file)
                     general = General(args, config)
 
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
-                        if args.folder is None or args.folder in server.folder_configs:
-                            if server.start():
+                        if args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                            if args.skip_ctrl or server.start():
                                 try:
-                                    if args.folder is None:
+                                    if args.folders is None:
                                         for folder_name in server.folder_configs:
                                             if not Folder(args, server, folder_name).sync():
                                                 break
                                     else:
-                                        Folder(args, server, args.folder).sync()
+                                        for folder_name in args.folders:
+                                            if folder_name in server.folder_configs:
+                                                if not Folder(args, server, folder_name).sync():
+                                                    break;
                                 finally:
-                                    server.stop()
+                                    if not args.skip_ctrl:
+                                        server.stop()
                             return True
                         return False
 
-                    if args.server is None:
+                    if args.servers is None:
                         if not any(_sync_server(server_name) for server_name in general.server_configs):
-                            logger.error(f"Folder %s is not specified under any server", args.folder)
-                    elif args.server in general.server_configs:
-                        if not _sync_server(args.server):
-                            logger.error(f"Folder %s is not specified under server %s", args.folder, args.server)
+                            logger.error("None of the specified folders (%s) are on any configured server", LazyStr(', '.join, args.folders))
+                    elif any(server_name in general.server_configs for server_name in args.servers):
+                        if not any(_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs):
+                            logger.error("None of the specified folders (%s) are on any specified servers (%s)", LazyStr(', '.join, args.folders), LazyStr(', '.join, args.servers))
                     else:
-                        logger.error(f"Server %s is not specified in config", args.server)
+                        logger.error("None of the specified servers (%s) are in the config", LazyStr(', '.join, args.servers))
 
-            except IOError as e:
-                if e.errno == errno.EACCES:
-                    e.add_note(f"Can't acquire lock on config-file, probably already running")
-
-        if args.scheduled:
-            logger.info("= STOPPED = %s %s", argv0, argvx)
-
-        if not args.scheduled and not args.no_pause and not args.test:
-            with suppress(EOFError):
-                input("Press Enter to continue...")
+            except LockTimeout as e:
+                logger.error("Can't acquire lock on %s, probably already running", e.lock_file)
 
     except Exception as e:
         if not args or args.debug or args.test:
@@ -331,6 +351,13 @@ def main():
                 logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
             else:
                 logger.error(LazyStr(repr, e))
+
+    if print_stopped:
+        logger.info("= STOPPED = %s %s", argv0, argvx)
+
+    if pause:
+        with suppress(EOFError):
+            input("Press Enter to continue...")
 
     return logger.exitcode
 
