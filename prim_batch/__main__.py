@@ -6,6 +6,7 @@ import platform
 import shlex
 import subprocess
 import sys
+import time
 import tomllib
 from contextlib import suppress
 from filelock import FileLock, Timeout as LockTimeout
@@ -106,11 +107,14 @@ def sync_ping(host, packets: int = 1, timeout: float = 1):
 
 def test_networking(timeout: float = 60):
     cnt = int(timeout / 5)
-    while not sync_ping('1.1.1.1', 1, 5):
-        cnt -= 1
-        if not cnt:
+    while True:
+        last_test_at = time.time()
+        if sync_ping('1.1.1.1', 1, 5):
+            return True
+        if 0 < (time_to_sleep := last_test_at + 5 - time.time()):
+            time.sleep(time_to_sleep)
+        if not (cnt := cnt -1):
             return False
-    return True
 
 def shlex_split(args):
     return shlex.split(args, platform.system().lower() != 'windows')
