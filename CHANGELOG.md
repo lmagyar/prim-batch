@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.2.0
 
 - Fix networking test when --scheduled
 - Update dependencies
