@@ -318,6 +318,10 @@ def main():
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
                         if args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                            if args.scheduled:
+                                logger.info("=========== %s", server_name)
+                            else:
+                                logger.info("Syncing %s", server_name)
                             if args.skip_ctrl or server.start():
                                 try:
                                     if args.folders is None:
