@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "prim-batch"
-version = "0.2.0"
+version = "0.3.0rc1"
 description = "Primitive Batch - Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands."
 license = "Apache-2.0"
 authors = ["Laszlo Magyar <lmagyar1973@gmail.com>"]
