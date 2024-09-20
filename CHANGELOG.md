@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Fix --servers and --folders, iterate all items
+
 ## 0.2.0
 
 - Fix networking test when --scheduled
