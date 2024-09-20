@@ -318,6 +318,10 @@ def main():
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
                         if args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                            if args.scheduled:
+                                logger.info("=========== %s", server_name)
+                            else:
+                                logger.info("Syncing %s", server_name)
                             if args.skip_ctrl or server.start():
                                 try:
                                     if args.folders is None:
@@ -336,10 +340,12 @@ def main():
                         return False
 
                     if args.servers is None:
-                        if not any(_sync_server(server_name) for server_name in general.server_configs):
+                        # iterate all, then test, don't stop at first
+                        if not any([_sync_server(server_name) for server_name in general.server_configs]):
                             logger.error("None of the specified folders (%s) are on any configured server", LazyStr(', '.join, args.folders))
                     elif any(server_name in general.server_configs for server_name in args.servers):
-                        if not any(_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs):
+                        # iterate all, then test, don't stop at first
+                        if not any([_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs]):
                             logger.error("None of the specified folders (%s) are on any specified servers (%s)", LazyStr(', '.join, args.folders), LazyStr(', '.join, args.servers))
                     else:
                         logger.error("None of the specified servers (%s) are in the config", LazyStr(', '.join, args.servers))
