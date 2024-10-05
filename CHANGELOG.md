@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Add --ctrl-only {test,start,stop} option
+
 ## 0.3.0
 
 - Fix --servers and --folders, iterate all items

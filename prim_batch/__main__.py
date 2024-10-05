@@ -197,25 +197,40 @@ class Server(HasPredefinedConfigs):
         sync_args.extend(super().get_sync_args_from_configs(name))
         return sync_args
 
-    def start(self):
+    def test(self):
+        test_ctrl_args = self.ctrl_cmd_args.copy()
+        if self.args.ctrl_args:
+            test_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
+        test_ctrl_args.extend(['-i'])
+        exitcode, _stdout = execute('prim-ctrl', test_ctrl_args, self.args)
+        return exitcode == 0
+
+    def start(self, no_state: bool = False):
         start_ctrl_args = self.ctrl_cmd_args.copy()
         if self.args.ctrl_args:
             start_ctrl_args.extend(shlex_split(self.args.ctrl_args))
-        start_ctrl_args.extend(['-i', 'start', '-b'])
+        start_ctrl_args.extend(['-i', 'start'])
+        if not no_state:
+            start_ctrl_args.extend(['-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         if exitcode == 0:
-            logger.debug("  previous state: %s", self.previous_state)
+            if not no_state:
+                logger.debug("  previous state: %s", self.previous_state)
+            else:
+                logger.info(self.previous_state.rstrip())
         return exitcode == 0
 
     @property
     def connected_over_vpn(self):
         return 'connected=remote' in self.previous_state
 
-    def stop(self):
+    def stop(self, no_state: bool = False):
         stop_ctrl_args = self.ctrl_cmd_args.copy()
         if self.args.ctrl_args:
             stop_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
-        stop_ctrl_args.extend(['-i', 'stop', '-r', self.previous_state])
+        stop_ctrl_args.extend(['-i', 'stop'])
+        if not no_state:
+            stop_ctrl_args.extend(['-r', self.previous_state])
         exitcode, _stdout = execute('prim-ctrl', stop_ctrl_args, self.args)
         return exitcode == 0
 
@@ -273,6 +288,7 @@ def main():
         parser.add_argument('--folders', nargs='+', metavar="FOLDER", help="syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)")
         parser.add_argument('--skip-ctrl', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
         parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)", default=False, action='store_true')
+        parser.add_argument('--ctrl-only', choices=["test", "start", "stop"], help="use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)", default="test")
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
         logging_group = parser.add_argument_group('logging',
             description="Note: prim-sync and prim-ctrl commands will receive these options also")
@@ -317,7 +333,24 @@ def main():
 
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
-                        if args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                        if args.ctrl_only is not None:
+                            if args.scheduled:
+                                logger.info("=========== %s", server_name)
+                            match args.ctrl_only:
+                                case "start":
+                                    if not args.scheduled:
+                                        logger.info("Starting %s", server_name)
+                                    server.start(no_state=True)
+                                case "stop":
+                                    if not args.scheduled:
+                                        logger.info("Stopping %s", server_name)
+                                    server.stop(no_state=True)
+                                case _:
+                                    if not args.scheduled:
+                                        logger.info("Testing %s", server_name)
+                                    server.test()
+                            return True
+                        elif args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
                             if args.scheduled:
                                 logger.info("=========== %s", server_name)
                             else:
