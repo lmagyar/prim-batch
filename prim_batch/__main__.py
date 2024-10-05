@@ -214,7 +214,10 @@ class Server(HasPredefinedConfigs):
             start_ctrl_args.extend(['-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         if exitcode == 0:
-            logger.debug("  previous state: %s", self.previous_state)
+            if not no_state:
+                logger.debug("  previous state: %s", self.previous_state)
+            else:
+                logger.info(self.previous_state.rstrip())
         return exitcode == 0
 
     @property
