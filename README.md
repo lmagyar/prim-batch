@@ -137,7 +137,7 @@ prim-batch config.toml -t --scheduled
 ### Options
 
 ```
-usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--skip-ctrl] [--ctrl-only {test,start,stop}] [--use-vpn] [--test] [-t] [-s] [--debug]
+usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--skip-ctrl] [--use-vpn] [--ctrl-only {test,start,stop}] [--test] [-t] [-s] [--debug]
                   [--ctrl-args ARGS] [-d] [--sync-args ARGS]
                   config-file
 
@@ -153,8 +153,8 @@ options:
   --servers SERVER [SERVER ...]  syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)
   --folders FOLDER [FOLDER ...]  syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)
   --skip-ctrl                    use only prim-sync, you have to start/stop the server manually
-  --ctrl-only {test,start,stop}  use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)
   --use-vpn                      use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)
+  --ctrl-only {test,start,stop}  use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)
   --test                         do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
 
 logging:

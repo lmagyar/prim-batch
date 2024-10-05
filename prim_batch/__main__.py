@@ -287,8 +287,8 @@ def main():
         parser.add_argument('--servers', nargs='+', metavar="SERVER", help="syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)")
         parser.add_argument('--folders', nargs='+', metavar="FOLDER", help="syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)")
         parser.add_argument('--skip-ctrl', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
-        parser.add_argument('--ctrl-only', choices=["test", "start", "stop"], help="use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)", default="test")
         parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)", default=False, action='store_true')
+        parser.add_argument('--ctrl-only', choices=["test", "start", "stop"], help="use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)", default="test")
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
         logging_group = parser.add_argument_group('logging',
             description="Note: prim-sync and prim-ctrl commands will receive these options also")
