@@ -201,7 +201,6 @@ class Server(HasPredefinedConfigs):
         test_ctrl_args = self.ctrl_cmd_args.copy()
         if self.args.ctrl_args:
             test_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
-        test_ctrl_args.extend(['-i'])
         exitcode, _stdout = execute('prim-ctrl', test_ctrl_args, self.args)
         return exitcode == 0
 
@@ -248,7 +247,7 @@ class Folder():
         if self._sync_cmd_args is None:
             self._sync_cmd_args = list()
             self._sync_cmd_args.extend(self.server.sync_args)
-            if self.args.use_vpn or not self.args.skip_ctrl and self.server.connected_over_vpn:
+            if self.args.use_vpn or not self.args.sync_only and self.server.connected_over_vpn:
                 self._sync_cmd_args.extend(self.server.sync_args_vpn)
             self._sync_cmd_args.extend(self.server.general.sync_args)
             for config_name in self.configs:
@@ -269,7 +268,7 @@ class Folder():
 ########
 
 class WideHelpFormatter(argparse.RawTextHelpFormatter):
-    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 33, width: int | None = None) -> None:
+    def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 35, width: int | None = None) -> None:
         super().__init__(prog, indent_increment, max_help_position, width)
 
 def main():
@@ -286,9 +285,9 @@ def main():
         parser.add_argument('--no-pause', help="syncs without pause", default=False, action='store_true')
         parser.add_argument('--servers', nargs='+', metavar="SERVER", help="syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)")
         parser.add_argument('--folders', nargs='+', metavar="FOLDER", help="syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)")
-        parser.add_argument('--skip-ctrl', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
-        parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)", default=False, action='store_true')
-        parser.add_argument('--ctrl-only', choices=["test", "start", "stop"], help="use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)", default="test")
+        parser.add_argument('--ctrl-only', nargs='?', choices=["test", "start", "stop"], help="use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option), default: test", default=None, const='test', action='store')
+        parser.add_argument('--sync-only', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
+        parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --sync-only is used)", default=False, action='store_true')
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
         logging_group = parser.add_argument_group('logging',
             description="Note: prim-sync and prim-ctrl commands will receive these options also")
@@ -307,8 +306,8 @@ def main():
             logger.setLevel(logging.DEBUG)
         logger.prepare(args.timestamp or args.debug or args.test, args.silent)
 
-        if args.use_vpn and not args.skip_ctrl:
-            raise ValueError("--use-vpn option can be used only when --skip-ctrl is used")
+        if args.use_vpn and not args.sync_only:
+            raise ValueError("--use-vpn option can be used only when --sync-only is used")
 
         pause = not args.scheduled and not args.no_pause and not args.test
 
@@ -355,7 +354,7 @@ def main():
                                 logger.info("=========== %s", server_name)
                             else:
                                 logger.info("Syncing %s", server_name)
-                            if args.skip_ctrl or server.start():
+                            if args.sync_only or server.start():
                                 try:
                                     if args.folders is None:
                                         for folder_name in server.folder_configs:
@@ -367,7 +366,7 @@ def main():
                                                 if not Folder(args, server, folder_name).sync():
                                                     break;
                                 finally:
-                                    if not args.skip_ctrl:
+                                    if not args.sync_only:
                                         server.stop()
                             return True
                         return False

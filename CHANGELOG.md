@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- BREAKING CHANGE: Rename --skip-ctrl to --sync-only
+- Fix --ctrl-only default option
+
 ## 0.4.0
 
 - Add --ctrl-only {test,start,stop} option
