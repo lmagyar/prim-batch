@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.5.0
 
 - BREAKING CHANGE: Rename --skip-ctrl to --sync-only
 - Fix --ctrl-only default option
