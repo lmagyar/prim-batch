@@ -137,37 +137,37 @@ prim-batch config.toml -t --scheduled
 ### Options
 
 ```
-usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--skip-ctrl] [--use-vpn] [--ctrl-only {test,start,stop}] [--test] [-t] [-s] [--debug]
+usage: prim-batch [-h] [--scheduled] [--no-pause] [--servers SERVER [SERVER ...]] [--folders FOLDER [FOLDER ...]] [--ctrl-only [{test,start,stop}]] [--sync-only] [--use-vpn] [--test] [-t] [-s] [--debug]
                   [--ctrl-args ARGS] [-d] [--sync-args ARGS]
                   config-file
 
 Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands, for more details see https://github.com/lmagyar/prim-batch
 
 positional arguments:
-  config-file                    TOML config file
+  config-file                      TOML config file
 
 options:
-  -h, --help                     show this help message and exit
-  --scheduled                    tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
-  --no-pause                     syncs without pause
-  --servers SERVER [SERVER ...]  syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)
-  --folders FOLDER [FOLDER ...]  syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)
-  --skip-ctrl                    use only prim-sync, you have to start/stop the server manually
-  --use-vpn                      use vpn config (not zeroconf) to access the server (can be used only when --skip-ctrl is used)
-  --ctrl-only {test,start,stop}  use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option)
-  --test                         do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
+  -h, --help                       show this help message and exit
+  --scheduled                      tests networking, syncs without pause and with less log messages, but with some extra log lines that are practical when the output is appended to a log file
+  --no-pause                       syncs without pause
+  --servers SERVER [SERVER ...]    syncs only the specified SERVERs (all, or only the specified --folders FOLDERs on them)
+  --folders FOLDER [FOLDER ...]    syncs only the specified FOLDERs (on all, or only on the specified --servers SERVERs)
+  --ctrl-only [{test,start,stop}]  use only prim-ctrl, you can sync the server manually (this is the equivalent of prim-ctrl's -i option), default: test
+  --sync-only                      use only prim-sync, you have to start/stop the server manually
+  --use-vpn                        use vpn config (not zeroconf) to access the server (can be used only when --sync-only is used)
+  --test                           do not execute any prim-ctrl or prim-sync commands, just log them ("dry" option for prim-batch), enables the --no-pause and --debug options
 
 logging:
   Note: prim-sync and prim-ctrl commands will receive these options also
 
-  -t, --timestamp                prefix each message with a timestamp
-  -s, --silent                   only errors printed
-  --debug                        use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
+  -t, --timestamp                  prefix each message with a timestamp
+  -s, --silent                     only errors printed
+  --debug                          use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options
 
 prim-ctrl:
-  --ctrl-args ARGS               any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'
+  --ctrl-args ARGS                 any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'
 
 prim-sync:
-  -d, --dry                      no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
-  --sync-args ARGS               any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'
+  -d, --dry                        no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
+  --sync-args ARGS                 any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'
 ```
