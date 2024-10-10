@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Update Python installation in Readme
+
 ## 0.5.0
 
 - BREAKING CHANGE: Rename --skip-ctrl to --sync-only
