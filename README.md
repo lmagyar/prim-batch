@@ -27,7 +27,7 @@ See my other project, https://github.com/lmagyar/prim-ctrl, for remote control o
 You need to install:
 
 - Python 3.12+, pip and venv on your laptop - see: https://www.python.org/downloads/ or
-  <details><summary>Unix</summary>
+  <details><summary>Ubuntu</summary>
 
   ```
   sudo apt update
@@ -43,7 +43,7 @@ You need to install:
   </details>
 
 - pipx - see: https://pipx.pypa.io/stable/installation/#installing-pipx or
-  <details><summary>Unix</summary>
+  <details><summary>Ubuntu</summary>
 
   ```
   sudo apt install pipx
@@ -73,7 +73,7 @@ Optionally, if you want to edit or even contribute to the source, you also need 
 
 It uses TOML file for configuration. Instead of specification, here is an example config:
 
-  <details><summary>Unix</summary>
+  <details><summary>Ubuntu</summary>
 
   ```
   ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443"
