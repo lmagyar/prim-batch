@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.5.1
 
 - Update Python installation in Readme
 
