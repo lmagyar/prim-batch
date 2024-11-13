@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Update Python installation in Readme
+
 ## 0.5.0
 
 - BREAKING CHANGE: Rename --skip-ctrl to --sync-only
