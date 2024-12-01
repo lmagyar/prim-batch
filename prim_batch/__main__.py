@@ -65,6 +65,15 @@ class Logger(logging.Logger):
         if self.level == logging.NOTSET:
             self.setLevel(logging.WARNING if silent else logging.INFO)
 
+    def exception_or_error(self, e: Exception, args):
+        if not args or args.debug:
+            logger.exception(e)
+        else:
+            if hasattr(e, '__notes__'):
+                logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
+            else:
+                logger.error(LazyStr(repr, e))
+
     def error(self, msg, *args, **kwargs):
         self.exitcode = 1
         super().error(msg, *args, **kwargs)
@@ -386,13 +395,7 @@ def main():
                 logger.error("Can't acquire lock on %s, probably already running", e.lock_file)
 
     except Exception as e:
-        if not args or args.debug or args.test:
-            logger.exception(e)
-        else:
-            if hasattr(e, '__notes__'):
-                logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
-            else:
-                logger.error(LazyStr(repr, e))
+        logger.exception_or_error(e, args)
 
     if print_stopped:
         logger.info("= STOPPED = %s %s", argv0, argvx)

@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Refactor exception logging
+
 ## 0.5.1
 
 - Update Python installation in Readme
