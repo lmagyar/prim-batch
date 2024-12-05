@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Change scheduled log format
 - Refactor exception logging
 
 ## 0.5.1

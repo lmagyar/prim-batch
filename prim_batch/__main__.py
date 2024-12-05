@@ -343,7 +343,7 @@ def main():
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:
                             if args.scheduled:
-                                logger.info("=========== %s", server_name)
+                                logger.info("----------- %s", server_name)
                             match args.ctrl_only:
                                 case "start":
                                     if not args.scheduled:
