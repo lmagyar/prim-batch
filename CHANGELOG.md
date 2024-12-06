@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.5.3
 
 - Change scheduled log format
 
