@@ -38,7 +38,7 @@ class LevelFormatter(logging.Formatter):
         return self.formatters.get(record.levelno, self.default_formatter).format(record)
 
 class Logger(logging.Logger):
-    def __init__(self, name, level=logging.NOTSET):
+    def __init__(self, name, level = logging.NOTSET):
         super().__init__(name, level)
         self.exitcode = 0
 
@@ -64,6 +64,15 @@ class Logger(logging.Logger):
         self.addHandler(handler)
         if self.level == logging.NOTSET:
             self.setLevel(logging.WARNING if silent else logging.INFO)
+
+    def exception_or_error(self, e: Exception, args):
+        if not args or args.debug:
+            logger.exception(e)
+        else:
+            if hasattr(e, '__notes__'):
+                logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
+            else:
+                logger.error(LazyStr(repr, e))
 
     def error(self, msg, *args, **kwargs):
         self.exitcode = 1
@@ -334,7 +343,7 @@ def main():
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:
                             if args.scheduled:
-                                logger.info("=========== %s", server_name)
+                                logger.info("----------- %s", server_name)
                             match args.ctrl_only:
                                 case "start":
                                     if not args.scheduled:
@@ -386,13 +395,7 @@ def main():
                 logger.error("Can't acquire lock on %s, probably already running", e.lock_file)
 
     except Exception as e:
-        if not args or args.debug or args.test:
-            logger.exception(e)
-        else:
-            if hasattr(e, '__notes__'):
-                logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
-            else:
-                logger.error(LazyStr(repr, e))
+        logger.exception_or_error(e, args)
 
     if print_stopped:
         logger.info("= STOPPED = %s %s", argv0, argvx)

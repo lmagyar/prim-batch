@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+
+- Change scheduled log format
+- Refactor exception logging
+
 ## 0.5.1
 
 - Update Python installation in Readme
