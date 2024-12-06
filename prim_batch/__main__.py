@@ -360,7 +360,7 @@ def main():
                             return True
                         elif args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
                             if args.scheduled:
-                                logger.info("=========== %s", server_name)
+                                logger.info("----------- %s", server_name)
                             else:
                                 logger.info("Syncing %s", server_name)
                             if args.sync_only or server.start():
