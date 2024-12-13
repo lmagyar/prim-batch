@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Refactor logging
+
 ## 0.5.3
 
 - Change scheduled log format
