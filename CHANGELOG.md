@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.5.4
 
 - Strip newline from previous state
 - Refactor logging
