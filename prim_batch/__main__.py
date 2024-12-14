@@ -226,7 +226,7 @@ class Server(HasPredefinedConfigs):
         self.previous_state = self.previous_state.rstrip()
         if exitcode == 0:
             if not no_state:
-                logger.debug("  previous state: %s", self.previous_state)
+                logger.debug("previous state: %s", self.previous_state)
             else:
                 logger.info(self.previous_state.rstrip())
         return exitcode == 0
