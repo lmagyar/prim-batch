@@ -223,6 +223,7 @@ class Server(HasPredefinedConfigs):
         if not no_state:
             start_ctrl_args.extend(['-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
+        self.previous_state = self.previous_state.rstrip()
         if exitcode == 0:
             if not no_state:
                 logger.debug("  previous state: %s", self.previous_state)

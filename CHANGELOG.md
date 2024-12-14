@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Strip newline from previous state
 - Refactor logging
 
 ## 0.5.3
