@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.5.5
 
 - Update prim-ctrl config example in readme
 
