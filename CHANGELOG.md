@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Update prim-ctrl config example in readme
+
 ## 0.5.4
 
 - Strip newline from previous state
