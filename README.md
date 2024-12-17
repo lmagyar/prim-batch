@@ -73,7 +73,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   <details><summary>Ubuntu</summary>
 
   ```
-  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443"
+  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile"
   sync-args = "-rs '/fs/storage/emulated/0' --ignore-locks 60 -sh"
 
   [configs]
@@ -81,7 +81,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   out = { sync-args = "-uo -m --overwrite-destination" }
 
   [servers.your-phone]
-  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222"
+  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net your-phone 2222"
   sync-args = "your-phone-pftpd id_ed25519_sftp"
   sync-args-vpn = "-a your-phone.tailxxxx.ts.net 2222"
 
@@ -99,7 +99,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   <details><summary>Windows</summary>
 
   ```
-  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
+  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile'
   sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
 
   [configs]
@@ -107,7 +107,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   out = { sync-args = '-uo -m --overwrite-destination' }
 
   [servers.your-phone]
-  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd --tailscale tailxxxx.ts.net your-phone 2222'
+  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net your-phone 2222'
   sync-args = 'your-phone-pftpd id_ed25519_sftp'
   sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
 
