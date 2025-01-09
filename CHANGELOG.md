@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Fix exception logging for test option
 - Make toml config options optional
 
 ## 0.5.5

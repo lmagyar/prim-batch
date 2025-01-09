@@ -66,7 +66,7 @@ class Logger(logging.Logger):
             self.setLevel(logging.WARNING if silent else logging.INFO)
 
     def exception_or_error(self, e: Exception, args):
-        if not args or args.debug:
+        if not args or args.debug or args.test:
             logger.exception(e)
         else:
             if hasattr(e, '__notes__'):
