@@ -9,6 +9,7 @@ import sys
 import time
 import tomllib
 from contextlib import suppress
+from typing import Any
 from filelock import FileLock, Timeout as LockTimeout
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from pathlib import Path
 
 LOCK_FILE_SUFFIX = '.lock'
 
+LOCK_FILE_LOCATION = 'lock-file-location'
 CTRL_ARGS = 'ctrl-args'
 SYNC_ARGS = 'sync-args'
 SYNC_ARGS_VPN = 'sync-args-vpn'
@@ -65,7 +67,7 @@ class Logger(logging.Logger):
             self.setLevel(logging.WARNING if silent else logging.INFO)
 
     def exception_or_error(self, e: Exception, args):
-        if not args or args.debug:
+        if not args or args.debug or args.test:
             logger.exception(e)
         else:
             if hasattr(e, '__notes__'):
@@ -127,8 +129,11 @@ def test_networking(timeout: float = 60):
         if not (cnt := cnt -1):
             return False
 
-def shlex_split(args):
-    return shlex.split(args, platform.system().lower() != 'windows')
+def shlex_split(args: str | None):
+    if not isinstance(args, str) or not args:
+        return list[str]()
+    else:
+        return shlex.split(args, platform.system().lower() != 'windows')
 
 def append_if_not_in(args, option, option_args = None):
     if option not in args:
@@ -161,34 +166,53 @@ def execute(command, args, parsed_args):
 
 ########
 
+def dict_or_default(o) -> dict[str, Any]:
+    if not isinstance(o, dict):
+        return dict[str, Any]()
+    else:
+        return o
+
+def list_or_default(o) -> list[str]:
+    if not isinstance(o, list):
+        return list[str]()
+    else:
+        return o
+
+def str_or_default(o) -> str:
+    if not isinstance(o, str):
+        return ''
+    else:
+        return o
+
 class HasPredefinedConfigs():
-    def __init__(self, configs):
+    def __init__(self, configs: dict[str, Any]):
         self.configs = configs
 
-    def get_sync_args_from_configs(self, name):
-        config = self.configs.get(name)
-        if config:
-            return shlex_split(config[SYNC_ARGS])
+    def get_sync_args_from_configs(self, name: str):
+        config = dict_or_default(self.configs.get(name))
+        if not config:
+            return list[str]()
         else:
-            return []
+            return shlex_split(config.get(SYNC_ARGS))
 
 class General(HasPredefinedConfigs):
-    def __init__(self, args, config):
-        super().__init__(config[CONFIGS])
-        self.ctrl_args = shlex_split(config[CTRL_ARGS])
-        self.sync_args = shlex_split(config[SYNC_ARGS])
-        self.server_configs = config[SERVERS]
+    def __init__(self, args, config: dict[str, Any]):
+        super().__init__(dict_or_default(config.get(CONFIGS)))
+        self.lock_file_location = str_or_default(config.get(LOCK_FILE_LOCATION))
+        self.ctrl_args = shlex_split(config.get(CTRL_ARGS))
+        self.sync_args = shlex_split(config.get(SYNC_ARGS))
+        self.server_configs = dict_or_default(config.get(SERVERS))
 
 class Server(HasPredefinedConfigs):
     def __init__(self, args, general: General, server_name: str):
-        server = general.server_configs[server_name]
-        super().__init__(server[CONFIGS])
+        server = dict_or_default(general.server_configs.get(server_name))
+        super().__init__(dict_or_default(server.get(CONFIGS)))
         self.args = args
         self.general = general
-        self.ctrl_args = shlex_split(server[CTRL_ARGS])
-        self.sync_args = shlex_split(server[SYNC_ARGS])
-        self.sync_args_vpn = shlex_split(server[SYNC_ARGS_VPN])
-        self.folder_configs = server[FOLDERS]
+        self.ctrl_args = shlex_split(server.get(CTRL_ARGS))
+        self.sync_args = shlex_split(server.get(SYNC_ARGS))
+        self.sync_args_vpn = shlex_split(server.get(SYNC_ARGS_VPN))
+        self.folder_configs = dict_or_default(server.get(FOLDERS))
         self._ctrl_cmd_args = None
 
     @property
@@ -249,9 +273,9 @@ class Folder():
     def __init__(self, args, server: Server, folder_name: str):
         self.args = args
         self.server = server
-        folder = server.folder_configs[folder_name]
-        self.configs = folder[CONFIGS]
-        self.sync_args = shlex_split(folder[SYNC_ARGS])
+        folder = dict_or_default(server.folder_configs.get(folder_name))
+        self.configs = list_or_default(folder.get(CONFIGS))
+        self.sync_args = shlex_split(folder.get(SYNC_ARGS))
         self._sync_cmd_args = None
 
     @property
@@ -334,14 +358,20 @@ def main():
             logger.error("Networking is down")
         else:
             try:
-                # keep a lock on the config file while running to prevent parallel runs
                 with (
-                    FileLock(args.config_file + LOCK_FILE_SUFFIX, blocking=False),
                     open(args.config_file, "rb") as config_file
                 ):
                     config = tomllib.load(config_file)
                     general = General(args, config)
-
+                # keep a lock on the config file while running to prevent parallel runs
+                if not general.lock_file_location:
+                    lock_file = args.config_file + LOCK_FILE_SUFFIX
+                else:
+                    lock_file = str(Path(os.path.expandvars(general.lock_file_location)) / Path(args.config_file).name) + LOCK_FILE_SUFFIX
+                logger.debug("lock file: %s", lock_file)
+                with (
+                    FileLock(lock_file, blocking=False)
+                ):
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+- Configurable lock file location
+- Fix exception logging for test option
+- Make toml config options optional
+
 ## 0.5.5
 
 - Update prim-ctrl config example in readme

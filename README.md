@@ -73,6 +73,8 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   <details><summary>Ubuntu</summary>
 
   ```
+  lock-file-location = "/tmp"
+
   ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile"
   sync-args = "-rs '/fs/storage/emulated/0' --ignore-locks 60 -sh"
 
@@ -99,6 +101,8 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   <details><summary>Windows</summary>
 
   ```
+  lock-file-location = '%TEMP%'
+
   ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile'
   sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
 
