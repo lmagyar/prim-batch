@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext
+## 0.6.0
 
 - Configurable lock file location
 - Fix exception logging for test option
