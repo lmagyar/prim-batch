@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Configurable lock file location
 - Fix exception logging for test option
 - Make toml config options optional
 

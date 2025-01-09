@@ -17,6 +17,7 @@ from pathlib import Path
 
 LOCK_FILE_SUFFIX = '.lock'
 
+LOCK_FILE_LOCATION = 'lock-file-location'
 CTRL_ARGS = 'ctrl-args'
 SYNC_ARGS = 'sync-args'
 SYNC_ARGS_VPN = 'sync-args-vpn'
@@ -177,6 +178,12 @@ def list_or_default(o) -> list[str]:
     else:
         return o
 
+def str_or_default(o) -> str:
+    if not isinstance(o, str):
+        return ''
+    else:
+        return o
+
 class HasPredefinedConfigs():
     def __init__(self, configs: dict[str, Any]):
         self.configs = configs
@@ -191,6 +198,7 @@ class HasPredefinedConfigs():
 class General(HasPredefinedConfigs):
     def __init__(self, args, config: dict[str, Any]):
         super().__init__(dict_or_default(config.get(CONFIGS)))
+        self.lock_file_location = str_or_default(config.get(LOCK_FILE_LOCATION))
         self.ctrl_args = shlex_split(config.get(CTRL_ARGS))
         self.sync_args = shlex_split(config.get(SYNC_ARGS))
         self.server_configs = dict_or_default(config.get(SERVERS))
@@ -350,14 +358,20 @@ def main():
             logger.error("Networking is down")
         else:
             try:
-                # keep a lock on the config file while running to prevent parallel runs
                 with (
-                    FileLock(args.config_file + LOCK_FILE_SUFFIX, blocking=False),
                     open(args.config_file, "rb") as config_file
                 ):
                     config = tomllib.load(config_file)
                     general = General(args, config)
-
+                # keep a lock on the config file while running to prevent parallel runs
+                if not general.lock_file_location:
+                    lock_file = args.config_file + LOCK_FILE_SUFFIX
+                else:
+                    lock_file = str(Path(os.path.expandvars(general.lock_file_location)) / Path(args.config_file).name) + LOCK_FILE_SUFFIX
+                logger.debug("lock file: %s", lock_file)
+                with (
+                    FileLock(lock_file, blocking=False)
+                ):
                     def _sync_server(server_name):
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:
