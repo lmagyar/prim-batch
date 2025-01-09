@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Make toml config options optional
+
 ## 0.5.5
 
 - Update prim-ctrl config example in readme
