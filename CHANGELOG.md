@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Refactor exception logging arguments
+
 ## 0.6.0
 
 - Configurable lock file location
