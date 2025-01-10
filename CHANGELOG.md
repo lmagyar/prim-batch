@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Refactor exception logging arguments
+
 ## 0.6.0
 
 - Configurable lock file location
