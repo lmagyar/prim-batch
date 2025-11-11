@@ -244,7 +244,7 @@ class Server(HasPredefinedConfigs):
         if self.args.ctrl_args:
             start_ctrl_args.extend(shlex_split(self.args.ctrl_args))
         start_ctrl_args.extend(['-i', 'start'])
-        if not no_state:
+        if not no_state and "--tailscale" in self.ctrl_cmd_args:
             start_ctrl_args.extend(['-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         self.previous_state = self.previous_state.rstrip()
@@ -264,7 +264,7 @@ class Server(HasPredefinedConfigs):
         if self.args.ctrl_args:
             stop_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
         stop_ctrl_args.extend(['-i', 'stop'])
-        if not no_state:
+        if self.previous_state and not no_state and "--tailscale" in self.ctrl_cmd_args:
             stop_ctrl_args.extend(['-r', self.previous_state])
         exitcode, _stdout = execute('prim-ctrl', stop_ctrl_args, self.args)
         return exitcode == 0

@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Don't use --backup-state and --restore-state options if there is no --tailscale option is used
 - Update dependencies and project file structure
 
 ## 0.6.1
