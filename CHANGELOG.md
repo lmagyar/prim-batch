@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Update dependencies and project file structure
+
 ## 0.6.1
 
 - Refactor exception logging arguments
