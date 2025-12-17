@@ -171,8 +171,12 @@ logging:
 
 prim-ctrl:
   --ctrl-args ARGS                 any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'
+                                   you can also specify per-server arguments using [SERVER]ARGS syntax separated by | character (SERVER can use Unix shell pattern, and can be omitted),
+                                   like --ctrl-args='[MyServer]--accept-cellular|[OtherServer]--debug|--silent'
 
 prim-sync:
   -d, --dry                        no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
   --sync-args ARGS                 any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'
+                                   you can also specify per-server/per-folder arguments using [SERVER,FOLDER]ARGS syntax separated by | character (SERVER and FOLDER can use Unix shell pattern, and can be omitted),
+                                   like --sync-args='[MyServer,MyFolder]--ignore-locks|[OtherServer,*]--debug|--dry'
 ```
