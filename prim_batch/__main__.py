@@ -386,7 +386,8 @@ def main():
             args.sync_args = regex.findall(args.sync_args)
 
         # this testing is useful when as a scheduled task is executed after an awake and networking is not ready yet
-        if args.scheduled and not test_networking(600):
+        if (args.scheduled and not test_networking(600)
+                or not args.scheduled and not test_networking(10)):
             logger.error("Networking is down")
         else:
             try:
