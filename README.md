@@ -96,7 +96,16 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 
   [servers.your-phone.folders]
   Camera        = { configs = [ "ext" ],        sync-args = "'Camera' 'DCIM/Camera'" }
-  Music         = { configs = [ "ext", "out" ], sync-args = "'Music' '*'" }
+  Music         = { folders = [
+    "_MusicBidir",
+    "_MusicOut",
+  ]}
+  # The next "hidden" folder configs are part of the default "all" folders sync, because referenced by the Music.folders config above
+  _MusicBidir   = { configs = [ "ext" ],        sync-args = "'Music' '*' -i 'SomeSymlinkedFolder/*'" }
+  _MusicOut     = { configs = [ "ext", "out" ], sync-args = "'Music' '*' -f 'SomeSymlinkedFolder/*'" }
+  Pictures      = { configs = [ "ext", "out" ], sync-args = "'Pictures' '*'" }
+  # The next "hidden" folder config is not part of the default "all" folders sync, but can be referenced with a --folders argument
+  _PicturesBaby = { configs = [ "ext", "out" ], sync-args = "'Pictures' '*' -f 'Baby/*'" }
   Screenshots   = { configs = [ "int" ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
   ```
 
@@ -124,7 +133,16 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 
   [servers.your-phone.folders]
   Camera        = { configs = [ 'ext' ],        sync-args = '"Camera" "DCIM/Camera"' }
-  Music         = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*"' }
+  Music         = { folders = [
+    '_MusicBidir',
+    '_MusicOut',
+  ]}
+  # The next "hidden" folder configs are part of the default "all" folders sync, because referenced by the Music.folders config above
+  _MusicBidir   = { configs = [ 'ext' ],        sync-args = '"Music" "*" -i "SomeSymlinkedFolder/*"' }
+  _MusicOut     = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*" -f "SomeSymlinkedFolder/*"' }
+  Pictures      = { configs = [ 'ext', 'out' ], sync-args = '"Pictures" "*"' }
+  # The next "hidden" folder config is not part of the default "all" folders sync, but can be referenced with a --folders argument
+  _PicturesBaby = { configs = [ 'ext', 'out' ], sync-args = '"Pictures" "*" -f "Baby/*"' }
   Screenshots   = { configs = [ 'int' ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
   ```
   </details>

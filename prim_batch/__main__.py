@@ -406,6 +406,19 @@ def main():
                     FileLock(lock_file, blocking=False)
                 ):
                     def _sync_server(server_name):
+                        def _flatten_folder(folder_name: str, folder_configs: dict[str, Any]) -> list[str]:
+                            def __flatten_folder(_folder_name:str):
+                                if folder_config := folder_configs.get(_folder_name):
+                                    if folders := list_or_default(folder_config.get(FOLDERS)):
+                                        for subfolder_name in folders:
+                                            yield from __flatten_folder(subfolder_name)
+                                    else:
+                                        yield _folder_name
+                            return list(__flatten_folder(folder_name))
+
+                        def _default_folders(folder_configs: dict[str, Any]) -> list[str]:
+                            return [folder for folder_name in folder_configs.keys() if not folder_name.startswith('_') for folder in _flatten_folder(folder_name, folder_configs)]
+
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:
                             if args.scheduled:
@@ -424,7 +437,7 @@ def main():
                                         logger.info("Testing %s", server_name)
                                     server.test()
                             return True
-                        elif args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                        elif args.folders is None or any(args_folder_name in server.folder_configs for args_folder_name in args.folders):
                             if args.scheduled:
                                 logger.info("----------- %s", server_name)
                             else:
@@ -432,14 +445,18 @@ def main():
                             if args.sync_only or server.start():
                                 try:
                                     if args.folders is None:
-                                        for folder_name in server.folder_configs:
+                                        for folder_name in _default_folders(server.folder_configs):
                                             if not Folder(args, server, folder_name).sync():
                                                 break
                                     else:
-                                        for folder_name in args.folders:
-                                            if folder_name in server.folder_configs:
-                                                if not Folder(args, server, folder_name).sync():
-                                                    break;
+                                        for args_folder_name in args.folders:
+                                            if args_folder_name in server.folder_configs:
+                                                for folder_name in _flatten_folder(args_folder_name, server.folder_configs):
+                                                    if not Folder(args, server, folder_name).sync():
+                                                        break;
+                                                else:
+                                                    continue
+                                                break
                                 finally:
                                     if not args.sync_only:
                                         server.stop()

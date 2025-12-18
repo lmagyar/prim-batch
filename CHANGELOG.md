@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Folders can be bundled
 - Test network availability even when not a scheduled run
 - Optionally per-server/per-folder --ctrl-args and --sync-args arguments
 - Don't use --backup-state and --restore-state options if there is no --tailscale option is used
