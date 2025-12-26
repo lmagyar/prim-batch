@@ -2,6 +2,7 @@
 
 ## vNext
 
+- Subprocess (prim-sync, prim-ctrl) exit code 130 results in Ctrl-C/KeyboardInterrupt
 - Ctrl-C/KeyboardInterrupt results in exit code 130
 - Folders can be bundled
 - Test network availability even when not a scheduled run

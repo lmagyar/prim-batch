@@ -167,6 +167,8 @@ def execute(command, args, parsed_args):
     # text=True doesn't work with the async version, will raise ValueError("text must be False"), who knows why
     # creationflags=subprocess.CREATE_NO_WINDOW causes to NOT write stderr at all
     result = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=sys.stderr, text=True)
+    if result.returncode == 130:
+        raise KeyboardInterrupt()
     return (result.returncode, result.stdout)
 
 ########
