@@ -5,6 +5,7 @@ import os
 import platform
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import time
@@ -82,11 +83,13 @@ class Logger(logging.Logger):
         super().error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        self.exitcode = 1
+        self.exitcode = 128 + kwargs.pop('signal', 0)
         super().critical(msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
-        if level >= logging.ERROR:
+        if level >= logging.CRITICAL:
+            self.exitcode = 128 + kwargs.pop('signal', 0)
+        elif level >= logging.ERROR:
             self.exitcode = 1
         super().log(level, msg, *args, **kwargs)
 
@@ -480,6 +483,9 @@ def main():
     except Exception as e:
         logger.exception_or_error(e)
 
+    except KeyboardInterrupt:
+        logger.critical("Interrupted by user", signal=signal.SIGINT)
+
     if print_stopped:
         logger.info("= STOPPED = %s %s", argv0, argvx)
 
@@ -490,5 +496,4 @@ def main():
     return logger.exitcode
 
 def run():
-    with suppress(KeyboardInterrupt):
-        exit(main())
+    sys.exit(main())
