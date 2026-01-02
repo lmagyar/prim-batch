@@ -224,6 +224,7 @@ class Server(HasPredefinedConfigs):
         self.args = args
         self.general = general
         self.name = server_name
+        self.previous_state = None
         self.ctrl_args = shlex_split(server.get(CTRL_ARGS))
         self.sync_args = shlex_split(server.get(SYNC_ARGS))
         self.sync_args_vpn = shlex_split(server.get(SYNC_ARGS_VPN))
@@ -268,12 +269,12 @@ class Server(HasPredefinedConfigs):
             if not no_state:
                 logger.debug("previous state: %s", self.previous_state)
             else:
-                logger.info(self.previous_state.rstrip())
+                logger.info(self.previous_state)
         return exitcode == 0
 
     @property
     def connected_over_vpn(self):
-        return 'connected=remote' in self.previous_state
+        return self.previous_state and 'connected=remote' in self.previous_state
 
     def stop(self, no_state: bool = False):
         stop_ctrl_args = self.ctrl_cmd_args.copy()
