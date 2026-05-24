@@ -2,6 +2,7 @@
 
 ## 0.7.0
 
+- Win: Suppress asyncio transport \_\_del\_\_ exceptions (ValueError from closed pipes) during interpreter shutdown
 - Subprocess (prim-sync, prim-ctrl) exit code 130 results in Ctrl-C/KeyboardInterrupt
 - Ctrl-C/KeyboardInterrupt results in exit code 130
 - Folders can be bundled
