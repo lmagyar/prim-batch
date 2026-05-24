@@ -150,7 +150,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 ## Usage
 
 Notes:
-- If you want to interrupt the synchronization, press Ctrl-C once (only once), and wait few seconds until the script properly removes temporary files, saves it's internal state and restores Primitive FTPd and VPN states. If you press Ctrl-C again, that interrupts the state persistence, Primitive FTPd and VPN state restoration also, ie. Primitive FTPd and VPN can remain running, and the next synchronization run will hash all changed files to recover from the interruption.
+- If you want to interrupt the synchronization, press Ctrl-C once, and wait few seconds until the script properly removes temporary files, saves it's internal state and restores Primitive FTPd and VPN states.
 
 ### Some example
 
