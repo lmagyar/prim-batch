@@ -75,7 +75,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   ```
   lock-file-location = "/tmp"
 
-  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile"
+  ctrl-args = "--funnel your-laptop 12345 /prim-ctrl 8443"
   sync-args = "-rs '/fs/storage/emulated/0' --ignore-locks 60 -sh"
 
   [configs]
@@ -83,7 +83,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   out = { sync-args = "-uo -m --overwrite-destination" }
 
   [servers.your-phone]
-  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net your-phone 2222"
+  ctrl-args = "Automate youraccount@gmail.com 'SOME MANUFACTURER XXX' automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net tailscale-secretfile your-phone 2222"
   sync-args = "your-phone-pftpd id_ed25519_sftp"
   sync-args-vpn = "-a your-phone.tailxxxx.ts.net 2222"
 
@@ -93,7 +93,16 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 
   [servers.your-phone.folders]
   Camera        = { configs = [ "ext" ],        sync-args = "'Camera' 'DCIM/Camera'" }
-  Music         = { configs = [ "ext", "out" ], sync-args = "'Music' '*'" }
+  Music         = { folders = [
+    "_MusicBidir",
+    "_MusicOut",
+  ]}
+  # The next "hidden" folder configs are part of the default "all" folders sync, because referenced by the Music.folders config above
+  _MusicBidir   = { configs = [ "ext" ],        sync-args = "'Music' '*' -i 'SomeSymlinkedFolder/*'" }
+  _MusicOut     = { configs = [ "ext", "out" ], sync-args = "'Music' '*' -f 'SomeSymlinkedFolder/*'" }
+  Pictures      = { configs = [ "ext", "out" ], sync-args = "'Pictures' '*'" }
+  # The next "hidden" folder config is not part of the default "all" folders sync, but can be referenced with a --folders argument
+  _PicturesBaby = { configs = [ "ext", "out" ], sync-args = "'Pictures' '*' -f 'Baby/*'" }
   Screenshots   = { configs = [ "int" ],        sync-args = "'Screenshots' 'DCIM/Screenshots'" }
   ```
 
@@ -103,7 +112,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   ```
   lock-file-location = '%TEMP%'
 
-  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443 tailscale-secretfile'
+  ctrl-args = '--funnel your-laptop 12345 /prim-ctrl 8443'
   sync-args = '-rs "/fs/storage/emulated/0" --ignore-locks 60 -sh'
 
   [configs]
@@ -111,7 +120,7 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
   out = { sync-args = '-uo -m --overwrite-destination' }
 
   [servers.your-phone]
-  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net your-phone 2222'
+  ctrl-args = 'Automate youraccount@gmail.com "SOME MANUFACTURER XXX" automate your-phone-pftpd id_ed25519_sftp --tailscale tailxxxx.ts.net tailscale-secretfile your-phone 2222'
   sync-args = 'your-phone-pftpd id_ed25519_sftp'
   sync-args-vpn = '-a your-phone.tailxxxx.ts.net 2222'
 
@@ -121,12 +130,24 @@ It uses TOML file for configuration. Instead of specification, here is an exampl
 
   [servers.your-phone.folders]
   Camera        = { configs = [ 'ext' ],        sync-args = '"Camera" "DCIM/Camera"' }
-  Music         = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*"' }
+  Music         = { folders = [
+    '_MusicBidir',
+    '_MusicOut',
+  ]}
+  # The next "hidden" folder configs are part of the default "all" folders sync, because referenced by the Music.folders config above
+  _MusicBidir   = { configs = [ 'ext' ],        sync-args = '"Music" "*" -i "SomeSymlinkedFolder/*"' }
+  _MusicOut     = { configs = [ 'ext', 'out' ], sync-args = '"Music" "*" -f "SomeSymlinkedFolder/*"' }
+  Pictures      = { configs = [ 'ext', 'out' ], sync-args = '"Pictures" "*"' }
+  # The next "hidden" folder config is not part of the default "all" folders sync, but can be referenced with a --folders argument
+  _PicturesBaby = { configs = [ 'ext', 'out' ], sync-args = '"Pictures" "*" -f "Baby/*"' }
   Screenshots   = { configs = [ 'int' ],        sync-args = '"Screenshots" "DCIM/Screenshots"' }
   ```
   </details>
 
 ## Usage
+
+Notes:
+- If you want to interrupt the synchronization, press Ctrl-C once, and wait few seconds until the script properly removes temporary files, saves it's internal state and restores Primitive FTPd and VPN states.
 
 ### Some example
 
@@ -168,8 +189,12 @@ logging:
 
 prim-ctrl:
   --ctrl-args ARGS                 any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'
+                                   you can also specify per-server arguments using [SERVER]ARGS syntax separated by | character (SERVER can use Unix shell pattern, and can be omitted),
+                                   like --ctrl-args='[MyServer]--accept-cellular|[OtherServer]--debug|--silent'
 
 prim-sync:
   -d, --dry                        no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up
   --sync-args ARGS                 any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'
+                                   you can also specify per-server/per-folder arguments using [SERVER,FOLDER]ARGS syntax separated by | character (SERVER and FOLDER can use Unix shell pattern, and can be omitted),
+                                   like --sync-args='[MyServer,MyFolder]--ignore-locks|[OtherServer,*]--debug|--dry'
 ```

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- Win: Suppress asyncio transport \_\_del\_\_ exceptions (ValueError from closed pipes) during interpreter shutdown
+- Subprocess (prim-sync, prim-ctrl) exit code 130 results in Ctrl-C/KeyboardInterrupt
+- Ctrl-C/KeyboardInterrupt results in exit code 130
+- Folders can be bundled
+- Test network availability even when not a scheduled run
+- Optionally per-server/per-folder --ctrl-args and --sync-args arguments
+- Don't use --backup-state and --restore-state options if there is no --tailscale option is used
+- Update dependencies and project file structure
+
 ## 0.6.1
 
 - Refactor exception logging arguments

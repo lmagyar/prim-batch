@@ -3,12 +3,15 @@ import argparse
 import logging
 import os
 import platform
+import re
 import shlex
+import signal
 import subprocess
 import sys
 import time
 import tomllib
 from contextlib import suppress
+from fnmatch import fnmatch
 from typing import Any
 from filelock import FileLock, Timeout as LockTimeout
 from pathlib import Path
@@ -80,11 +83,13 @@ class Logger(logging.Logger):
         super().error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        self.exitcode = 1
+        self.exitcode = 128 + kwargs.pop('signal', 0)
         super().critical(msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
-        if level >= logging.ERROR:
+        if level >= logging.CRITICAL:
+            self.exitcode = 128 + kwargs.pop('signal', 0)
+        elif level >= logging.ERROR:
             self.exitcode = 1
         super().log(level, msg, *args, **kwargs)
 
@@ -162,6 +167,8 @@ def execute(command, args, parsed_args):
     # text=True doesn't work with the async version, will raise ValueError("text must be False"), who knows why
     # creationflags=subprocess.CREATE_NO_WINDOW causes to NOT write stderr at all
     result = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=sys.stderr, text=True)
+    if result.returncode == 130:
+        raise KeyboardInterrupt()
     return (result.returncode, result.stdout)
 
 ########
@@ -205,14 +212,24 @@ class General(HasPredefinedConfigs):
 
 class Server(HasPredefinedConfigs):
     def __init__(self, args, general: General, server_name: str):
+        def _get_args_ctrl_args():
+            if self.args.ctrl_args:
+                for s, a in self.args.ctrl_args:
+                    if (not s) or fnmatch(self.name, s):
+                        return a
+            return None
+
         server = dict_or_default(general.server_configs.get(server_name))
         super().__init__(dict_or_default(server.get(CONFIGS)))
         self.args = args
         self.general = general
+        self.name = server_name
+        self.previous_state = None
         self.ctrl_args = shlex_split(server.get(CTRL_ARGS))
         self.sync_args = shlex_split(server.get(SYNC_ARGS))
         self.sync_args_vpn = shlex_split(server.get(SYNC_ARGS_VPN))
         self.folder_configs = dict_or_default(server.get(FOLDERS))
+        self.args_ctrl_args = shlex_split(_get_args_ctrl_args())
         self._ctrl_cmd_args = None
 
     @property
@@ -234,17 +251,17 @@ class Server(HasPredefinedConfigs):
 
     def test(self):
         test_ctrl_args = self.ctrl_cmd_args.copy()
-        if self.args.ctrl_args:
-            test_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
+        if self.args_ctrl_args:
+            test_ctrl_args.extend(arg for arg in self.args_ctrl_args if arg not in ['-ac', '--accept-cellular'])
         exitcode, _stdout = execute('prim-ctrl', test_ctrl_args, self.args)
         return exitcode == 0
 
     def start(self, no_state: bool = False):
         start_ctrl_args = self.ctrl_cmd_args.copy()
-        if self.args.ctrl_args:
-            start_ctrl_args.extend(shlex_split(self.args.ctrl_args))
+        if self.args_ctrl_args:
+            start_ctrl_args.extend(self.args_ctrl_args)
         start_ctrl_args.extend(['-i', 'start'])
-        if not no_state:
+        if not no_state and "--tailscale" in self.ctrl_cmd_args:
             start_ctrl_args.extend(['-b'])
         exitcode, self.previous_state = execute('prim-ctrl', start_ctrl_args, self.args)
         self.previous_state = self.previous_state.rstrip()
@@ -252,30 +269,39 @@ class Server(HasPredefinedConfigs):
             if not no_state:
                 logger.debug("previous state: %s", self.previous_state)
             else:
-                logger.info(self.previous_state.rstrip())
+                logger.info(self.previous_state)
         return exitcode == 0
 
     @property
     def connected_over_vpn(self):
-        return 'connected=remote' in self.previous_state
+        return self.previous_state and 'connected=remote' in self.previous_state
 
     def stop(self, no_state: bool = False):
         stop_ctrl_args = self.ctrl_cmd_args.copy()
-        if self.args.ctrl_args:
-            stop_ctrl_args.extend(arg for arg in shlex_split(self.args.ctrl_args) if arg not in ['-ac', '--accept-cellular'])
+        if self.args_ctrl_args:
+            stop_ctrl_args.extend(arg for arg in self.args_ctrl_args if arg not in ['-ac', '--accept-cellular'])
         stop_ctrl_args.extend(['-i', 'stop'])
-        if not no_state:
+        if self.previous_state and not no_state and "--tailscale" in self.ctrl_cmd_args:
             stop_ctrl_args.extend(['-r', self.previous_state])
         exitcode, _stdout = execute('prim-ctrl', stop_ctrl_args, self.args)
         return exitcode == 0
 
 class Folder():
     def __init__(self, args, server: Server, folder_name: str):
+        def _get_args_sync_args():
+            if self.args.sync_args:
+                for s, f, a in self.args.sync_args:
+                    if (not s and not f) or fnmatch(self.server.name, s) and fnmatch(self.name, f):
+                        return a
+            return None
+
         self.args = args
         self.server = server
+        self.name = folder_name
         folder = dict_or_default(server.folder_configs.get(folder_name))
         self.configs = list_or_default(folder.get(CONFIGS))
         self.sync_args = shlex_split(folder.get(SYNC_ARGS))
+        self.args_sync_args = shlex_split(_get_args_sync_args())
         self._sync_cmd_args = None
 
     @property
@@ -293,8 +319,8 @@ class Folder():
             append_sync_options(self._sync_cmd_args, self.args)
             if self.args.scheduled:
                 append_if_not_in(self._sync_cmd_args, '-ss')
-            if self.args.sync_args:
-                self._sync_cmd_args.extend(shlex_split(self.args.sync_args))
+            if self.args_sync_args:
+                self._sync_cmd_args.extend(self.args_sync_args)
         return self._sync_cmd_args
 
     def sync(self):
@@ -331,10 +357,14 @@ def main():
         logging_group.add_argument('-s', '--silent', help="only errors printed", default=False, action='store_true')
         logging_group.add_argument('--debug', help="use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options", default=False, action='store_true')
         ctrl_group = parser.add_argument_group('prim-ctrl')
-        ctrl_group.add_argument('--ctrl-args', metavar="ARGS", help="any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'")
+        ctrl_group.add_argument('--ctrl-args', metavar="ARGS", help="any prim-ctrl arguments to pass on - between quotation marks, using equal sign, like --ctrl-args='--accept-cellular'\n"
+            "you can also specify per-server arguments using [SERVER]ARGS syntax separated by | character (SERVER can use Unix shell pattern, and can be omitted),\n"
+            "like --ctrl-args='[MyServer]--accept-cellular|[OtherServer]--debug|--silent'")
         sync_group = parser.add_argument_group('prim-sync')
         sync_group.add_argument('-d', '--dry', help="no files changed in the synchronized folder(s), only internal state gets updated and temporary files get cleaned up", default=False, action='store_true')
-        sync_group.add_argument('--sync-args', metavar="ARGS", help="any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'")
+        sync_group.add_argument('--sync-args', metavar="ARGS", help="any prim-sync arguments to pass on - between quotation marks, using equal sign, like --sync-args='--ignore-locks'\n"
+            "you can also specify per-server/per-folder arguments using [SERVER,FOLDER]ARGS syntax separated by | character (SERVER and FOLDER can use Unix shell pattern, and can be omitted),\n"
+            "like --sync-args='[MyServer,MyFolder]--ignore-locks|[OtherServer,*]--debug|--dry'")
 
         args = parser.parse_args()
 
@@ -353,8 +383,17 @@ def main():
             print_stopped = True
             logger.info("= STARTED = %s %s", argv0, argvx)
 
+        # translate ctrl_args and sync_args into list of tuples in case of per-server/per-folder arguments
+        if args.ctrl_args:
+            regex = re.compile(r"(?:\[([^]]+)\])?([^|]+)\|?")
+            args.ctrl_args = regex.findall(args.ctrl_args)
+        if args.sync_args:
+            regex = re.compile(r"(?:\[([^,]+),([^]]+)\])?([^|]+)\|?")
+            args.sync_args = regex.findall(args.sync_args)
+
         # this testing is useful when as a scheduled task is executed after an awake and networking is not ready yet
-        if args.scheduled and not test_networking(600):
+        if (args.scheduled and not test_networking(600)
+                or not args.scheduled and not test_networking(10)):
             logger.error("Networking is down")
         else:
             try:
@@ -373,6 +412,19 @@ def main():
                     FileLock(lock_file, blocking=False)
                 ):
                     def _sync_server(server_name):
+                        def _flatten_folder(folder_name: str, folder_configs: dict[str, Any]) -> list[str]:
+                            def __flatten_folder(_folder_name:str):
+                                if folder_config := folder_configs.get(_folder_name):
+                                    if folders := list_or_default(folder_config.get(FOLDERS)):
+                                        for subfolder_name in folders:
+                                            yield from __flatten_folder(subfolder_name)
+                                    else:
+                                        yield _folder_name
+                            return list(__flatten_folder(folder_name))
+
+                        def _default_folders(folder_configs: dict[str, Any]) -> list[str]:
+                            return [folder for folder_name in folder_configs.keys() if not folder_name.startswith('_') for folder in _flatten_folder(folder_name, folder_configs)]
+
                         server = Server(args, general, server_name)
                         if args.ctrl_only is not None:
                             if args.scheduled:
@@ -391,7 +443,7 @@ def main():
                                         logger.info("Testing %s", server_name)
                                     server.test()
                             return True
-                        elif args.folders is None or any(folder_name in server.folder_configs for folder_name in args.folders):
+                        elif args.folders is None or any(args_folder_name in server.folder_configs for args_folder_name in args.folders):
                             if args.scheduled:
                                 logger.info("----------- %s", server_name)
                             else:
@@ -399,14 +451,18 @@ def main():
                             if args.sync_only or server.start():
                                 try:
                                     if args.folders is None:
-                                        for folder_name in server.folder_configs:
+                                        for folder_name in _default_folders(server.folder_configs):
                                             if not Folder(args, server, folder_name).sync():
                                                 break
                                     else:
-                                        for folder_name in args.folders:
-                                            if folder_name in server.folder_configs:
-                                                if not Folder(args, server, folder_name).sync():
-                                                    break;
+                                        for args_folder_name in args.folders:
+                                            if args_folder_name in server.folder_configs:
+                                                for folder_name in _flatten_folder(args_folder_name, server.folder_configs):
+                                                    if not Folder(args, server, folder_name).sync():
+                                                        break;
+                                                else:
+                                                    continue
+                                                break
                                 finally:
                                     if not args.sync_only:
                                         server.stop()
@@ -430,6 +486,9 @@ def main():
     except Exception as e:
         logger.exception_or_error(e)
 
+    except KeyboardInterrupt:
+        logger.critical("Interrupted by user", signal=signal.SIGINT)
+
     if print_stopped:
         logger.info("= STOPPED = %s %s", argv0, argvx)
 
@@ -440,5 +499,11 @@ def main():
     return logger.exitcode
 
 def run():
-    with suppress(KeyboardInterrupt):
-        exit(main())
+    try:
+        sys.exit(main())
+    finally:
+        # Windows: suppress stderr during interpreter shutdown to silence asyncio
+        # transport __del__ exceptions (ValueError from closed pipes).
+        # This must happen after main() returns but before Python garbage collects.
+        if sys.platform == "win32":
+            sys.stderr = open(os.devnull, "w")

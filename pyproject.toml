@@ -1,9 +1,14 @@
 [tool.poetry]
+packages = [{include = "prim_batch"}]
+
+[project]
 name = "prim-batch"
-version = "0.6.1"
+version = "0.7.0"
 description = "Primitive Batch - Multiplatform Python script for batch execution of prim-ctrl and prim-sync commands."
 license = "Apache-2.0"
-authors = ["Laszlo Magyar <lmagyar1973@gmail.com>"]
+authors = [
+    {name = "Laszlo Magyar", email = "lmagyar1973@gmail.com"}
+]
 readme = "README.md"
 repository = "https://github.com/lmagyar/prim-batch"
 classifiers = [
@@ -11,16 +16,15 @@ classifiers = [
     "Environment :: Console",
     "Operating System :: OS Independent",
 ]
-packages = [{include = "prim_batch"}]
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "filelock (>=3.20.0)",
+]
 
-[tool.poetry.urls]
+[project.urls]
 "Change Log" = "https://github.com/lmagyar/prim-batch/blob/main/CHANGELOG.md"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-filelock = "^3.16.1"
-
-[tool.poetry.scripts]
+[project.scripts]
 prim-batch = "prim_batch.__main__:run"
 
 [build-system]
