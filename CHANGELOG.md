@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- Fix sonarqube issues
+
 ## 0.7.0
 
 - Win: Suppress asyncio transport \_\_del\_\_ exceptions (ValueError from closed pipes) during interpreter shutdown
