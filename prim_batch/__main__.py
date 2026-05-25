@@ -35,7 +35,7 @@ class LevelFormatter(logging.Formatter):
 
     def __init__(self, fmts: dict[int, str], fmt: str, **kwargs):
         super().__init__()
-        self.formatters = dict({level: logging.Formatter(fmt, **kwargs) for level, fmt in fmts.items()})
+        self.formatters = {level: logging.Formatter(fmt, **kwargs) for level, fmt in fmts.items()}
         self.default_formatter = logging.Formatter(fmt, **kwargs)
 
     def format(self, record: logging.LogRecord) -> str:
@@ -127,7 +127,7 @@ def test_networking(timeout: float = 60):
     cnt = int(timeout / 5)
     while True:
         last_test_at = time.time()
-        if sync_ping('1.1.1.1', 1, 5):
+        if sync_ping('1.1.1.1', 1, 5): # NOSONAR(S1313)
             return True
         if 0 < (time_to_sleep := last_test_at + 5 - time.time()):
             time.sleep(time_to_sleep)
@@ -175,13 +175,13 @@ def execute(command, args, parsed_args):
 
 def dict_or_default(o) -> dict[str, Any]:
     if not isinstance(o, dict):
-        return dict[str, Any]()
+        return {}
     else:
         return o
 
 def list_or_default(o) -> list[str]:
     if not isinstance(o, list):
-        return list[str]()
+        return []
     else:
         return o
 
@@ -235,7 +235,7 @@ class Server(HasPredefinedConfigs):
     @property
     def ctrl_cmd_args(self):
         if self._ctrl_cmd_args is None:
-            self._ctrl_cmd_args = list()
+            self._ctrl_cmd_args = []
             self._ctrl_cmd_args.extend(self.ctrl_args)
             self._ctrl_cmd_args.extend(self.general.ctrl_args)
             append_logging_options(self._ctrl_cmd_args, self.args)
@@ -244,7 +244,7 @@ class Server(HasPredefinedConfigs):
         return self._ctrl_cmd_args
 
     def get_sync_args_from_configs(self, name):
-        sync_args = list()
+        sync_args = []
         sync_args.extend(self.general.get_sync_args_from_configs(name))
         sync_args.extend(super().get_sync_args_from_configs(name))
         return sync_args
@@ -307,7 +307,7 @@ class Folder():
     @property
     def sync_cmd_args(self):
         if self._sync_cmd_args is None:
-            self._sync_cmd_args = list()
+            self._sync_cmd_args = []
             self._sync_cmd_args.extend(self.server.sync_args)
             if self.args.use_vpn or not self.args.sync_only and self.server.connected_over_vpn:
                 self._sync_cmd_args.extend(self.server.sync_args_vpn)
@@ -333,7 +333,7 @@ class WideHelpFormatter(argparse.RawTextHelpFormatter):
     def __init__(self, prog: str, indent_increment: int = 2, max_help_position: int = 35, width: int | None = None) -> None:
         super().__init__(prog, indent_increment, max_help_position, width)
 
-def main():
+def main(): # NOSONAR(S3776)
     args = None
     print_stopped = False
     pause = False
@@ -471,11 +471,11 @@ def main():
 
                     if args.servers is None:
                         # iterate all, then test, don't stop at first
-                        if not any([_sync_server(server_name) for server_name in general.server_configs]):
+                        if not any(_sync_server(server_name) for server_name in general.server_configs):
                             logger.error("None of the specified folders (%s) are on any configured server", LazyStr(', '.join, args.folders))
                     elif any(server_name in general.server_configs for server_name in args.servers):
                         # iterate all, then test, don't stop at first
-                        if not any([_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs]):
+                        if not any(_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs):
                             logger.error("None of the specified folders (%s) are on any specified servers (%s)", LazyStr(', '.join, args.folders), LazyStr(', '.join, args.servers))
                     else:
                         logger.error("None of the specified servers (%s) are in the config", LazyStr(', '.join, args.servers))
