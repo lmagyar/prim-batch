@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+
+- Partially revert sonarqube "fixes"
+
 ## 0.7.1
 
 - Fix sonarqube issues

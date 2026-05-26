@@ -471,11 +471,11 @@ def main(): # NOSONAR(S3776)
 
                     if args.servers is None:
                         # iterate all, then test, don't stop at first
-                        if not any(_sync_server(server_name) for server_name in general.server_configs):
+                        if not any([_sync_server(server_name) for server_name in general.server_configs]): # NOSONAR(S7492)
                             logger.error("None of the specified folders (%s) are on any configured server", LazyStr(', '.join, args.folders))
                     elif any(server_name in general.server_configs for server_name in args.servers):
                         # iterate all, then test, don't stop at first
-                        if not any(_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs):
+                        if not any([_sync_server(server_name) for server_name in args.servers if server_name in general.server_configs]): # NOSONAR(S7492)
                             logger.error("None of the specified folders (%s) are on any specified servers (%s)", LazyStr(', '.join, args.folders), LazyStr(', '.join, args.servers))
                     else:
                         logger.error("None of the specified servers (%s) are in the config", LazyStr(', '.join, args.servers))
