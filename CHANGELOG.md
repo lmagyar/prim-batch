@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Partially revert sonarqube "fixes"
+
 ## 0.7.1
 
 - Fix sonarqube issues
