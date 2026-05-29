@@ -73,10 +73,7 @@ class Logger(logging.Logger):
         if self.level == logging.NOTSET or self.level == logging.DEBUG:
             logger.exception(e)
         else:
-            if hasattr(e, '__notes__'):
-                logger.error("%s: %s", LazyStr(repr, e), LazyStr(", ".join, e.__notes__))
-            else:
-                logger.error(LazyStr(repr, e))
+            logger.error(LazyStr(exception_repr, e))
 
     def error(self, msg, *args, **kwargs):
         self.exitcode = 1
@@ -92,6 +89,9 @@ class Logger(logging.Logger):
         elif level >= logging.ERROR:
             self.exitcode = 1
         super().log(level, msg, *args, **kwargs)
+
+def exception_repr(e: BaseException) -> str:
+    return f"{repr(e)}: {", ".join(e.__notes__)}" if hasattr(e, '__notes__') else repr(e)
 
 class LazyStr:
     def __init__(self, func, *args, **kwargs):

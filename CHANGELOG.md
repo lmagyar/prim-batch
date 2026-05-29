@@ -1,5 +1,9 @@
 # Changelog
 
+## vNext
+
+- Fine tune exception representation is log messages
+
 ## 0.7.2
 
 - Partially revert sonarqube "fixes"
