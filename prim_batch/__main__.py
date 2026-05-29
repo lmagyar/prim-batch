@@ -351,8 +351,8 @@ def main(): # NOSONAR(S3776)
         parser.add_argument('--sync-only', help="use only prim-sync, you have to start/stop the server manually", default=False, action='store_true')
         parser.add_argument('--use-vpn', help="use vpn config (not zeroconf) to access the server (can be used only when --sync-only is used)", default=False, action='store_true')
         parser.add_argument('--test', help="do not execute any prim-ctrl or prim-sync commands, just log them (\"dry\" option for prim-batch), enables the --no-pause and --debug options", default=False, action='store_true')
-        logging_group = parser.add_argument_group('logging',
-            description="Note: prim-sync and prim-ctrl commands will receive these options also")
+        logging_group = parser.add_argument_group('logging', description=
+            "Note: prim-sync and prim-ctrl commands will receive these options also")
         logging_group.add_argument('-t', '--timestamp', help="prefix each message with a timestamp", default=False, action='store_true')
         logging_group.add_argument('-s', '--silent', help="only errors printed", default=False, action='store_true')
         logging_group.add_argument('--debug', help="use debug level logging and add stack trace for exceptions, disables the --silent and enables the --timestamp options", default=False, action='store_true')
